@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DIOGENES // KINIKLAR KROSSVORDI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-void: #090a0e;
+      --bg-card: #11131a;
+      --bg-elevated: #181b25;
+      --border-brutal: #2b3040;
+      --neon-yellow: #ffe600;
+      --neon-lime: #a3ff12;
+      --neon-coral: #ff3b5c;
+      --neon-cyan: #00e5ff;
+      --neon-violet: #b86bff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-void);
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(circle at 12% 8%, rgba(255, 230, 0, 0.08), transparent 36%),
+        radial-gradient(circle at 88% 18%, rgba(163, 255, 18, 0.07), transparent 38%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+    }
+
+    .font-display {
+      font-family: 'Unbounded', sans-serif;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .brutal-box {
+      background: var(--bg-card);
+      border: 2px solid var(--border-brutal);
+      box-shadow: 5px 5px 0px #000000;
+      border-radius: 14px;
+    }
+
+    .brutal-box-yellow {
+      background: var(--bg-card);
+      border: 2px solid var(--neon-yellow);
+      box-shadow: 5px 5px 0px var(--neon-yellow);
+      border-radius: 14px;
+    }
+
+    .brutal-box-lime {
+      background: var(--bg-card);
+      border: 2px solid var(--neon-lime);
+      box-shadow: 5px 5px 0px var(--neon-lime);
+      border-radius: 14px;
+    }
+
+    .brutal-btn {
+      border: 2px solid #090a0e;
+      box-shadow: 4px 4px 0px #090a0e;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
+      cursor: pointer;
+    }
+
+    .brutal-btn:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0px #090a0e;
+      filter: brightness(1.04);
+    }
+
+    .brutal-btn:active:not(:disabled) {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0px #090a0e;
+    }
+
+    .brutal-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.65); opacity: 0; }
+      70% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .animate-pop-in {
+      animation: popIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(163, 255, 18, 0.35); }
+      50% { box-shadow: 0 0 24px 4px rgba(163, 255, 18, 0.22); }
+    }
+
+    .leader-glow {
+      animation: pulseGlow 2.4s infinite;
+    }
+
+    /* Crossword grid cells */
+    .cw-grid {
+      display: grid;
+      grid-template-columns: repeat(13, minmax(0, 1fr));
+      gap: 4px;
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 640px) {
+      .cw-grid {
+        gap: 2px;
+      }
+    }
+
+    .cw-cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 900;
+      user-select: none;
+      transition: transform 0.2s ease, background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    .cw-cell-empty {
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px dashed rgba(255, 255, 255, 0.05);
+    }
+
+    .cw-cell-unsolved {
+      background: #171a24;
+      border: 2px solid #353b50;
+      color: transparent;
+    }
+
+    .cw-cell-active-word {
+      background: #232612;
+      border: 2px solid var(--neon-yellow);
+      box-shadow: inset 0 0 10px rgba(255, 230, 0, 0.22);
+    }
+
+    .cw-cell-solved {
+      background: var(--neon-lime);
+      border: 2px solid #090a0e;
+      color: #090a0e;
+      box-shadow: 2px 2px 0px #090a0e;
+    }
+
+    .cw-cell-input {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      text-align: center;
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffe600;
+      caret-color: #a3ff12;
+      padding: 0;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    .cw-cell-input:focus {
+      background: rgba(163, 255, 18, 0.14);
+    }
+
+    .cw-cell-correct-letter .cw-cell-input {
+      color: #a3ff12;
+    }
+
+    .cw-cell-wrong-letter .cw-cell-input {
+      color: #ff3b5c;
+    }
+
+    .cw-num {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+      color: #94a3b8;
+    }
+
+    .cw-cell-solved .cw-num {
+      color: #090a0e;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d0f15;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2b3040;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--neon-yellow);
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="min-h-screen flex flex-col"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    window.__FIREBASE_BRIDGE__ = {
+      initializeApp,
+      getAuth,
+      signInAnonymously,
+      signInWithCustomToken,
+      getFirestore,
+      doc,
+      setDoc,
+      onSnapshot
+    };
+    window.dispatchEvent(new Event("firebase-ready"));
+  </script>
+
+  <script>
+    // --- 1. UZBEK ONLY DICTIONARY ---
+    const UZ_TEXT = {
+      brandSub: "KINIKLAR KROSSVORDI // O'ZINGGA DIOGEN BO'L",
+      lobbyTitle: "DIOGEN KROSSVORDIGA RO'YXATDAN O'TISH",
+      lobbyDesc: "Noyob nikneym kiriting (takrorlanmasligi shart) va krossvordga kiring. Barcha 10 ta savol va katakchalar tayyor — o'zingiz yozing. 3 ta ishtirokchi so'zni to'g'ri topsa, javob asosiy ekranda ochiladi!",
+      nickLabel: "NIKNEYM (BOSHQA ISHTIROKCHINIKIGA O'XSHAMASLIGI KERAK)",
+      nickPlaceholder: "Masalan: Bochka_Qiroli",
+      nickTakenError: "Bu nikneym allaqachon band! Boshqa noyob nik kiriting.",
+      nickEmptyError: "Davom etish uchun nikneym kiriting.",
+      registerAndOpenBtn: "RO'YXATDAN O'TISH VA KROSSVORDNI OCHISH",
+      openHostBtn: "ASOSIY EKRAN (DOSKA)",
+      splitViewBtn: "IKKI EKRAN YONMA-YON (TEST)",
+      copyLinkBtn: "SAYT HAVOLASINI NUSXALASH",
+      copiedToast: "Havola nusxalandi! Guruhga tashlashingiz mumkin.",
+      topLeaderLabel: "TOP-3 G'OLIB // KROSSVORDNI BIRINCHI TO'LDIRGANLAR",
+      noFinishersYet: "HODIRCHA HECH KIM 10/10 SO'ZNI YAKUNLAMADI",
+      podiumSlotEmpty: "BO'SH O'RIN",
+      solvedWordsCount: "SO'Z",
+      hostControls: "BOSHLOVCHI PANELI",
+      resetGameBtn: "SESSIYANI TOZALASH",
+      demoBotBtn: "+ 3 TA O'YINCHINI SIMULYATSIYA QILISH",
+      crosswordTitle: "DIOGEN KROSSVORDI (10 SO'Z)",
+      boardHint: "3 ta o'yinchi so'zni to'g'ri to'ldirsa — javob avtomatik ravishda asosiy ekranda ochiladi!",
+      unlockedBadge: "3/3 DOSKADA OCHILDI",
+      progressBadgeSuffix: "/3 TOPDI",
+      questionsListTitle: "KROSSVORD SAVOLLARI (1–10)",
+      yourProgress: "JARAYON",
+      yourRank: "O'RIN",
+      wordUnlockedToast: (word, count) => `"${word}" so'zi ${count}/3 natija bilan asosiy ekranda ochildi!`,
+      podiumUnlockedToast: (place, nick) => `🏆 #${place}-o'rin shohsupada: ${nick} krossvordni to'liq yakunladi!`,
+      clearMyGridBtn: "KATAKLARIMNI TOZALASH",
+      acrossLabel: "GORIZONTAL",
+      downLabel: "VERTIKAL",
+      syncLocal: "LIVE SYNC: BROADCAST + XOTIRA",
+      syncCloud: "LIVE SYNC: FIRESTORE CLOUD"
+    };
+
+    // --- 2. 10 UZBEK CROSSWORD QUESTIONS & 13x13 GRID ---
+    const QUESTIONS = [
+      {
+        id: 1,
+        num: 1,
+        uzQ: "Diogen qanday «VIP-kvartira»da yashab, ijara haqidan butkul qutulgan?"
+      },
+      {
+        id: 2,
+        num: 2,
+        uzQ: "Diogen kunduz kuni quyosh nurida qo'lida nimani ko'tarib «Insonni izlayapman» degan?"
+      },
+      {
+        id: 3,
+        num: 3,
+        uzQ: "Kiniklar falsafasida odamning soxta niqobsiz, to'g'ri va samimiy holati nimaga tayanadi?"
+      },
+      {
+        id: 4,
+        num: 4,
+        uzQ: "Quyosh nurida haqiqatni izlagan faylasufning yo'l ko'rsatuvchi yog'du ramzi nima?"
+      },
+      {
+        id: 5,
+        num: 5,
+        uzQ: "«Odam — patsiz, ikki oyoqli jonivor» deb ta'rif bergan mashhur faylasuf kim?"
+      },
+      {
+        id: 6,
+        num: 6,
+        uzQ: "Diogen o'zining keskin hazillari, bochkasi va erkinligi bilan qaysi maydonni larzaga solgan?"
+      },
+      {
+        id: 7,
+        num: 7,
+        uzQ: "Diogenning o'tkir savollari va bahslarida unga qarshi chiqqan «raqib» kim bo'lishi mumkin?"
+      },
+      {
+        id: 8,
+        num: 8,
+        uzQ: "Diogen boylik va mansabdan voz kechib, qanday fazilatni eng oliy boylik deb bilgan?"
+      },
+      {
+        id: 9,
+        num: 9,
+        uzQ: "Jamiyatdagi guruhlar, maktablar yoki «klublar» ichida o'z qoidasiga ega jamoani qanday atash mumkin?"
+      },
+      {
+        id: 10,
+        num: 10,
+        uzQ: "Diogenning tabiatga yaqin, ortiqcha bezaksiz hayotida tabiiy go'zallik nimada ko'rinadi?"
+      }
+    ];
+
+    const CROSSWORD_WORDS = [
+      { qId: 1, num: 1, word: "BOCHKA", row: 1, col: 1, dir: "across" },
+      { qId: 2, num: 2, word: "CHIROQ", row: 1, col: 3, dir: "down" },
+      { qId: 3, num: 3, word: "ISHONCH", row: 3, col: 3, dir: "across" },
+      { qId: 4, num: 4, word: "NURI", row: 3, col: 7, dir: "down" },
+      { qId: 5, num: 5, word: "PLATON", row: 7, col: 3, dir: "across" },
+      { qId: 6, num: 6, word: "ARENA", row: 7, col: 5, dir: "down" },
+      { qId: 7, num: 7, word: "RAQIB", row: 8, col: 5, dir: "across" },
+      { qId: 8, num: 8, word: "HALOL", row: 3, col: 9, dir: "down" },
+      { qId: 9, num: 9, word: "LIGA", row: 5, col: 9, dir: "across" },
+      { qId: 10, num: 10, word: "GUL", row: 5, col: 11, dir: "down" }
+    ];
+
+    const QUIZ_ITEMS = QUESTIONS.map((q) => {
+      const cw = CROSSWORD_WORDS.find((w) => w.qId === q.id);
+      return {
+        ...q,
+        word: cw.word,
+        row: cw.row,
+        col: cw.col,
+        dir: cw.dir
+      };
+    });
+
+    const GRID_ROWS = 13;
+    const GRID_COLS = 13;
+    const CELL_META = {};
+    QUIZ_ITEMS.forEach((item) => {
+      for (let i = 0; i < item.word.length; i++) {
+        const r = item.dir === "across" ? item.row : item.row + i;
+        const c = item.dir === "across" ? item.col + i : item.col;
+        const key = `${r},${c}`;
+        if (!CELL_META[key]) {
+          CELL_META[key] = {
+            letter: item.word[i],
+            numbers: [],
+            entries: []
+          };
+        }
+        if (i === 0 && !CELL_META[key].numbers.includes(item.num)) {
+          CELL_META[key].numbers.push(item.num);
+        }
+        CELL_META[key].entries.push({ qId: item.id, index: i });
+      }
+    });
+
+    // --- 3. REAL-TIME STATE & SYNC ENGINE ---
+    const ROOM_CODE = "DIOGEN-777";
+    const CHANNEL_NAME = "diogenes_crossword_uz_unique_v1";
+    const STORAGE_KEY = "diogenes_crossword_uz_unique_state_v1";
+    const UNLOCK_THRESHOLD = 3;
+
+    function createInitialGameState() {
+      return {
+        roomCode: ROOM_CODE,
+        wordSolvers: {},
+        unlockedWords: {},
+        finishers: [],
+        players: {},
+        updatedAt: Date.now()
+      };
+    }
+
+    function loadPersistedState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.roomCode === ROOM_CODE) {
+            return parsed;
+          }
+        }
+      } catch (e) {}
+      return createInitialGameState();
+    }
+
+    let state = loadPersistedState();
+
+    let clientId = sessionStorage.getItem("diogen_client_id");
+    if (!clientId) {
+      clientId = "u_" + Math.random().toString(36).slice(2, 9);
+      sessionStorage.setItem("diogen_client_id", clientId);
+    }
+
+    function loadMyGrid() {
+      try {
+        const raw = sessionStorage.getItem(`diogen_grid_${clientId}`);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    let myGrid = loadMyGrid();
+    let activeWordId = 1;
+    let uiRole = "lobby"; // 'lobby' | 'host' | 'player' | 'split'
+    let playerNick = sessionStorage.getItem("diogen_nick") || "";
+    let nickErrorMsg = "";
+    let toastMessage = "";
+    let toastTimeout = null;
+    let cloudEnabled = false;
+    let firestoreRef = null;
+    let firestoreSetDocFn = null;
+
+    const bc = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(CHANNEL_NAME) : null;
+
+    function saveMyGrid() {
+      try {
+        sessionStorage.setItem(`diogen_grid_${clientId}`, JSON.stringify(myGrid));
+      } catch (e) {}
+    }
+
+    function triggerToast(msg) {
+      toastMessage = msg;
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toastMessage = "";
+        render();
+      }, 3400);
+      render();
+    }
+
+    function broadcastState(nextState, pushCloud = true) {
+      state = { ...nextState, updatedAt: Date.now() };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+      if (bc) {
+        bc.postMessage({ type: "STATE_SYNC", state });
+      }
+      if (pushCloud && cloudEnabled && firestoreRef && firestoreSetDocFn) {
+        firestoreSetDocFn(firestoreRef, { payload: JSON.stringify(state), updatedAt: state.updatedAt }).catch(() => {});
+      }
+      render();
+    }
+
+    if (bc) {
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === "STATE_SYNC" && event.data.state) {
+          if (event.data.state.updatedAt >= state.updatedAt) {
+            state = event.data.state;
+            render();
+          }
+        }
+      };
+    }
+
+    window.addEventListener("storage", (event) => {
+      if (event.key === STORAGE_KEY && event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (parsed && parsed.updatedAt >= state.updatedAt) {
+            state = parsed;
+            render();
+          }
+        } catch (e) {}
+      }
+    });
+
+    window.addEventListener("firebase-ready", async () => {
+      try {
+        if (typeof __firebase_config !== "undefined" && __firebase_config) {
+          const bridge = window.__FIREBASE_BRIDGE__;
+          const cfg = JSON.parse(__firebase_config);
+          const appId = typeof __app_id !== "undefined" ? __app_id : "diogenes-crossword";
+          const app = bridge.initializeApp(cfg);
+          const auth = bridge.getAuth(app);
+          if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
+            await bridge.signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await bridge.signInAnonymously(auth);
+          }
+          const db = bridge.getFirestore(app);
+          firestoreRef = bridge.doc(db, "artifacts", appId, "public", "data", "diogenes_crossword_rooms", ROOM_CODE);
+          firestoreSetDocFn = bridge.setDoc;
+          cloudEnabled = true;
+
+          bridge.onSnapshot(firestoreRef, (snap) => {
+            if (snap.exists()) {
+              const raw = snap.data().payload;
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed.updatedAt > state.updatedAt) {
+                  state = parsed;
+                  render();
+                }
+              }
+            }
+          }, () => {});
+          render();
+        }
+      } catch (e) {
+        cloudEnabled = false;
+      }
+    });
+
+    // --- 4. UNIQUE NICKNAME REGISTRATION & VALIDATION ---
+    function isNicknameTaken(candidateNick, excludeId = clientId) {
+      const normalized = String(candidateNick || "").trim().toLowerCase();
+      if (!normalized) return false;
+      const allPlayers = Object.values(state.players || {});
+      return allPlayers.some(
+        (p) => p.id !== excludeId && String(p.nick || "").trim().toLowerCase() === normalized
+      );
+    }
+
+    function registerNicknameAndEnterPlayer(rawInput) {
+      const cleanNick = String(rawInput || "").trim().slice(0, 18);
+      if (!cleanNick) {
+        nickErrorMsg = UZ_TEXT.nickEmptyError;
+        render();
+        return false;
+      }
+
+      if (isNicknameTaken(cleanNick, clientId)) {
+        nickErrorMsg = UZ_TEXT.nickTakenError;
+        render();
+        return false;
+      }
+
+      nickErrorMsg = "";
+      playerNick = cleanNick;
+      sessionStorage.setItem("diogen_nick", cleanNick);
+
+      const players = { ...(state.players || {}) };
+      const existing = players[clientId] || {
+        id: clientId,
+        nick: cleanNick,
+        solvedWordIds: [],
+        finishedAt: null,
+        joinedAt: Date.now()
+      };
+      players[clientId] = {
+        ...existing,
+        nick: cleanNick
+      };
+
+      const finishers = (state.finishers || []).map((f) =>
+        f.id === clientId ? { ...f, nick: cleanNick } : f
+      );
+
+      broadcastState({ ...state, players, finishers });
+      uiRole = "player";
+      render();
+      return true;
+    }
+
+    // --- 5. CROSSWORD EVALUATION & 3-PLAYER UNLOCK + TOP-3 PODIUM ---
+    function isWordCorrectInGrid(item, gridObj) {
+      for (let i = 0; i < item.word.length; i++) {
+        const r = item.dir === "across" ? item.row : item.row + i;
+        const c = item.dir === "across" ? item.col + i : item.col;
+        const val = (gridObj[`${r},${c}`] || "").trim().toUpperCase();
+        if (val !== item.word[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function evaluateGridForPlayer(targetPlayerId, targetNick, gridObj) {
+      const solvedIds = [];
+      QUIZ_ITEMS.forEach((item) => {
+        if (isWordCorrectInGrid(item, gridObj)) {
+          solvedIds.push(item.id);
+        }
+      });
+
+      const wordSolvers = { ...(state.wordSolvers || {}) };
+      const unlockedWords = { ...(state.unlockedWords || {}) };
+      const players = { ...(state.players || {}) };
+      let finishers = [...(state.finishers || [])];
+
+      const prevPlayer = players[targetPlayerId] || {
+        id: targetPlayerId,
+        nick: targetNick,
+        solvedWordIds: [],
+        finishedAt: null,
+        joinedAt: Date.now()
+      };
+
+      const prevSolvedSet = new Set(prevPlayer.solvedWordIds || []);
+      let newlyUnlockedWord = null;
+      let newlyCrownedFinisher = null;
+
+      solvedIds.forEach((qId) => {
+        const list = Array.isArray(wordSolvers[qId]) ? [...wordSolvers[qId]] : [];
+        if (!list.includes(targetPlayerId)) {
+          list.push(targetPlayerId);
+          wordSolvers[qId] = list;
+        }
+
+        if (list.length >= UNLOCK_THRESHOLD && !unlockedWords[qId]) {
+          const item = QUIZ_ITEMS.find((q) => q.id === qId);
+          const solverObjs = list.slice(0, UNLOCK_THRESHOLD).map((pid) => ({
+            id: pid,
+            nick: (players[pid] && players[pid].nick) || (pid === targetPlayerId ? targetNick : "Kinik")
+          }));
+          unlockedWords[qId] = {
+            word: item.word,
+            unlockedAt: Date.now(),
+            solvers: solverObjs
+          };
+          if (!prevSolvedSet.has(qId) || targetPlayerId === clientId) {
+            newlyUnlockedWord = { word: item.word, count: list.length };
+          }
+        }
+      });
+
+      const finishedAt =
+        solvedIds.length === QUIZ_ITEMS.length
+          ? prevPlayer.finishedAt || Date.now()
+          : null;
+
+      players[targetPlayerId] = {
+        ...prevPlayer,
+        nick: targetNick,
+        solvedWordIds: solvedIds,
+        finishedAt
+      };
+
+      if (solvedIds.length === QUIZ_ITEMS.length && !finishers.some((f) => f.id === targetPlayerId)) {
+        if (finishers.length < 3) {
+          const entry = {
+            id: targetPlayerId,
+            nick: targetNick,
+            finishedAt: finishedAt || Date.now(),
+            solvedCount: solvedIds.length
+          };
+          finishers.push(entry);
+          newlyCrownedFinisher = { place: finishers.length, nick: targetNick };
+        }
+      }
+
+      broadcastState({
+        ...state,
+        wordSolvers,
+        unlockedWords,
+        players,
+        finishers
+      });
+
+      if (newlyCrownedFinisher && targetPlayerId === clientId) {
+        triggerToast(UZ_TEXT.podiumUnlockedToast(newlyCrownedFinisher.place, newlyCrownedFinisher.nick));
+      } else if (newlyUnlockedWord) {
+        triggerToast(UZ_TEXT.wordUnlockedToast(newlyUnlockedWord.word, newlyUnlockedWord.count));
+      }
+    }
+
+    function handleCellInput(r, c, rawVal) {
+      if (!playerNick) {
+        uiRole = "lobby";
+        nickErrorMsg = UZ_TEXT.nickEmptyError;
+        render();
+        return;
+      }
+
+      const cleanLetter = String(rawVal || "")
+        .replace(/[^a-zA-Zа-яА-ЯёЁўЎқҚғҒҳҲ']/g, "")
+        .slice(-1)
+        .toUpperCase();
+
+      const key = `${r},${c}`;
+      if (cleanLetter) {
+        myGrid[key] = cleanLetter;
+      } else {
+        delete myGrid[key];
+      }
+      saveMyGrid();
+
+      if (cleanLetter) {
+        const meta = CELL_META[key];
+        const activeEntry =
+          (meta && meta.entries.find((e) => e.qId === activeWordId)) ||
+          (meta && meta.entries[0]);
+        if (activeEntry) {
+          const item = QUIZ_ITEMS.find((q) => q.id === activeEntry.qId);
+          if (item && activeEntry.index + 1 < item.word.length) {
+            const nr = item.dir === "across" ? item.row : item.row + activeEntry.index + 1;
+            const nc = item.dir === "across" ? item.col + activeEntry.index + 1 : item.col;
+            setTimeout(() => {
+              const nextEl = document.getElementById(`cell-${nr}-${nc}`);
+              if (nextEl) nextEl.focus();
+            }, 0);
+          }
+        }
+      }
+
+      evaluateGridForPlayer(clientId, playerNick, myGrid);
+    }
+
+    function clearMyGrid() {
+      myGrid = {};
+      saveMyGrid();
+      const players = { ...state.players };
+      if (players[clientId]) {
+        players[clientId] = { ...players[clientId], solvedWordIds: [], finishedAt: null };
+      }
+      broadcastState({ ...state, players });
+      render();
+    }
+
+    function resetSession() {
+      myGrid = {};
+      saveMyGrid();
+      nickErrorMsg = "";
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+      const fresh = createInitialGameState();
+      if (playerNick) {
+        fresh.players[clientId] = {
+          id: clientId,
+          nick: playerNick,
+          solvedWordIds: [],
+          finishedAt: null,
+          joinedAt: Date.now()
+        };
+      }
+      broadcastState(fresh);
+      triggerToast("Sessiya tozalandi!");
+    }
+
+    function simulateThreePlayersProgress() {
+      const simPlayers = [
+        { id: "sim_1", nick: "Bochka_Boss" },
+        { id: "sim_2", nick: "Fonar_Iskatel" },
+        { id: "sim_3", nick: "Sinop_Rebel" }
+      ];
+
+      const players = { ...(state.players || {}) };
+      const wordSolvers = { ...(state.wordSolvers || {}) };
+      const unlockedWords = { ...(state.unlockedWords || {}) };
+      let finishers = [...(state.finishers || [])];
+
+      simPlayers.forEach((sp) => {
+        if (!players[sp.id]) {
+          players[sp.id] = {
+            id: sp.id,
+            nick: sp.nick,
+            solvedWordIds: [],
+            finishedAt: null,
+            joinedAt: Date.now()
+          };
+        }
+      });
+
+      const nextTargetItem = QUIZ_ITEMS.find((item) => !unlockedWords[item.id]);
+
+      if (nextTargetItem) {
+        const qId = nextTargetItem.id;
+        const currentList = Array.isArray(wordSolvers[qId]) ? [...wordSolvers[qId]] : [];
+        for (const sp of simPlayers) {
+          if (!currentList.includes(sp.id)) {
+            currentList.push(sp.id);
+          }
+          const pSolved = new Set(players[sp.id].solvedWordIds || []);
+          pSolved.add(qId);
+          players[sp.id] = {
+            ...players[sp.id],
+            solvedWordIds: Array.from(pSolved)
+          };
+          if (currentList.length >= UNLOCK_THRESHOLD) break;
+        }
+        wordSolvers[qId] = currentList;
+        unlockedWords[qId] = {
+          word: nextTargetItem.word,
+          unlockedAt: Date.now(),
+          solvers: currentList.slice(0, UNLOCK_THRESHOLD).map((pid) => ({
+            id: pid,
+            nick: players[pid] ? players[pid].nick : pid
+          }))
+        };
+        broadcastState({ ...state, players, wordSolvers, unlockedWords, finishers });
+        triggerToast(UZ_TEXT.wordUnlockedToast(nextTargetItem.word, currentList.length));
+      } else {
+        const allIds = QUIZ_ITEMS.map((q) => q.id);
+        finishers = simPlayers.map((sp, idx) => {
+          const finTime = Date.now() - (3 - idx) * 4000;
+          players[sp.id] = {
+            ...players[sp.id],
+            solvedWordIds: allIds,
+            finishedAt: finTime
+          };
+          return {
+            id: sp.id,
+            nick: sp.nick,
+            finishedAt: finTime,
+            solvedCount: allIds.length
+          };
+        });
+        broadcastState({ ...state, players, wordSolvers, unlockedWords, finishers });
+        triggerToast("🏆 Top-3 g'oliblar shohsupada!");
+      }
+    }
+
+    // --- 6. HOST BIG SCREEN CROSSWORD ---
+    function renderHostCrosswordBoard() {
+      const t = UZ_TEXT;
+      const unlockedCount = Object.keys(state.unlockedWords || {}).length;
+
+      const cellsHtml = [];
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          const meta = CELL_META[`${r},${c}`];
+          if (!meta) {
+            cellsHtml.push(`<div class="cw-cell cw-cell-empty"></div>`);
+          } else {
+            const unlockingEntry = meta.entries.find((e) => Boolean(state.unlockedWords[e.qId]));
+            const isUnlocked = Boolean(unlockingEntry);
+            const isFocused = meta.entries.some((e) => e.qId === activeWordId);
+
+            const classes = [
+              "cw-cell",
+              isUnlocked ? "cw-cell-solved animate-pop-in" : "cw-cell-unsolved",
+              !isUnlocked && isFocused ? "cw-cell-active-word" : ""
+            ].join(" ");
+
+            const numLabel = meta.numbers.length
+              ? `<span class="cw-num">${meta.numbers[0]}</span>`
+              : "";
+            const content = isUnlocked
+              ? `<span class="text-sm sm:text-lg">${meta.letter}</span>`
+              : `<span class="text-xs sm:text-sm">·</span>`;
+
+            cellsHtml.push(`
+              <div class="${classes}" title="${isUnlocked ? t.unlockedBadge : ""}">
+                ${numLabel}
+                ${content}
+              </div>
+            `);
+          }
+        }
+      }
+
+      const unlockedList = QUIZ_ITEMS.filter((item) => state.unlockedWords[item.id]);
+
+      return `
+        <div class="brutal-box p-4 sm:p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-display text-sm sm:text-lg font-black text-[#ffe600]">
+                ${t.crosswordTitle}
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">${t.boardHint}</p>
+            </div>
+            <span class="font-mono-code text-xs px-3 py-1.5 rounded-lg bg-[#161924] text-[#a3ff12] border border-[#a3ff12]/50 font-extrabold">
+              ${unlockedCount} / ${QUIZ_ITEMS.length} ${t.solvedWordsCount}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            ${
+              unlockedList.length === 0
+                ? `<div class="sm:col-span-2 p-4 rounded-xl bg-[#141720] border border-dashed border-[#2b3040] text-xs text-slate-400 text-center">
+                    Hozircha birorta so'z 3 ta to'g'ri yechimga yetmadi. 3 ishtirokchi to'ldirsa — shu yerda ochiladi!
+                  </div>`
+                : unlockedList
+                    .map((item) => {
+                      const info = state.unlockedWords[item.id];
+                      const solverNames = (info.solvers || []).map((s) => escapeHtml(s.nick)).join(", ");
+                      return `
+                        <div class="animate-pop-in p-3 rounded-xl bg-[#a3ff12]/12 border-2 border-[#a3ff12] flex flex-col justify-between gap-1">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="font-display text-sm font-black text-[#ffe600]">
+                              #${item.num} ${item.word}
+                            </span>
+                            <span class="font-mono-code text-[10px] font-black px-2 py-0.5 rounded bg-[#a3ff12] text-[#090a0e]">
+                              3/3 ✓
+                            </span>
+                          </div>
+                          <div class="font-mono-code text-[11px] text-slate-200 truncate">
+                            ${solverNames}
+                          </div>
+                        </div>
+                      `;
+                    })
+                    .join("")
+            }
+          </div>
+
+          <div class="cw-grid pt-1">
+            ${cellsHtml.join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    // --- 7. PLAYER SELF-PACED CROSSWORD + ALL 10 UZBEK QUESTIONS ---
+    function renderPlayerCrosswordAndQuestions() {
+      const t = UZ_TEXT;
+      if (!playerNick) {
+        return renderLobbyView();
+      }
+
+      const myPlayer = state.players[clientId] || { solvedWordIds: [], finishedAt: null };
+      const mySolvedSet = new Set(myPlayer.solvedWordIds || []);
+      const activeQ = QUIZ_ITEMS.find((q) => q.id === activeWordId) || QUIZ_ITEMS[0];
+
+      const allPlayers = Object.values(state.players || {}).sort((a, b) => {
+        const lenDiff = (b.solvedWordIds || []).length - (a.solvedWordIds || []).length;
+        if (lenDiff !== 0) return lenDiff;
+        if (a.finishedAt && b.finishedAt) return a.finishedAt - b.finishedAt;
+        if (a.finishedAt) return -1;
+        if (b.finishedAt) return 1;
+        return a.joinedAt - b.joinedAt;
+      });
+      const myRankIdx = allPlayers.findIndex((p) => p.id === clientId);
+      const myRank = myRankIdx >= 0 ? `#${myRankIdx + 1}` : "-";
+
+      const cellsHtml = [];
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          const key = `${r},${c}`;
+          const meta = CELL_META[key];
+          if (!meta) {
+            cellsHtml.push(`<div class="cw-cell cw-cell-empty"></div>`);
+          } else {
+            const val = (myGrid[key] || "").toUpperCase();
+            const isCorrectChar = val && val === meta.letter;
+            const isWrongChar = val && val !== meta.letter;
+            const isHighlighted = meta.entries.some((e) => e.qId === activeWordId);
+
+            const classes = [
+              "cw-cell",
+              "cw-cell-unsolved",
+              isHighlighted ? "cw-cell-active-word" : "",
+              isCorrectChar ? "cw-cell-correct-letter border-[#a3ff12]" : "",
+              isWrongChar ? "cw-cell-wrong-letter border-[#ff3b5c]" : ""
+            ].join(" ");
+
+            const numLabel = meta.numbers.length
+              ? `<span class="cw-num">${meta.numbers[0]}</span>`
+              : "";
+
+            cellsHtml.push(`
+              <div class="${classes}" onclick="focusCell(${r}, ${c})">
+                ${numLabel}
+                <input
+                  id="cell-${r}-${c}"
+                  type="text"
+                  inputmode="text"
+                  autocapitalize="characters"
+                  autocomplete="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  maxlength="1"
+                  value="${escapeAttr(val)}"
+                  onfocus="selectWordByCell(${r}, ${c})"
+                  oninput="handleCellInput(${r}, ${c}, this.value)"
+                  class="cw-cell-input text-xs sm:text-base"
+                  aria-label="Qator ${r + 1} Ustun ${c + 1}"
+                />
+              </div>
+            `);
+          }
+        }
+      }
+
+      return `
+        <div class="max-w-5xl mx-auto space-y-4">
+          <div class="brutal-box p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div class="font-mono-code text-[10px] uppercase text-slate-400">
+                ISHTIROKCHI
+              </div>
+              <div class="font-display text-base sm:text-xl font-black text-[#ffe600]">
+                ${escapeHtml(playerNick)}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <div class="text-center">
+                <div class="font-display text-lg font-black text-[#a3ff12]">
+                  ${mySolvedSet.size}/${QUIZ_ITEMS.length}
+                </div>
+                <div class="font-mono-code text-[10px] text-slate-400">${t.yourProgress}</div>
+              </div>
+              <div class="text-center">
+                <div class="font-display text-lg font-black text-[#00e5ff]">${myRank}</div>
+                <div class="font-mono-code text-[10px] text-slate-400">${t.yourRank}</div>
+              </div>
+              <button
+                onclick="clearMyGrid()"
+                class="brutal-btn bg-[#1d2130] text-slate-200 font-mono-code text-xs font-bold px-3 py-2 rounded-xl"
+              >
+                ${t.clearMyGridBtn}
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            <div class="lg:col-span-6 brutal-box-yellow p-4 space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="font-display text-sm sm:text-base font-black text-[#ffe600]">
+                  ${t.crosswordTitle}
+                </h3>
+                <span class="font-mono-code text-xs font-bold px-2.5 py-1 rounded bg-[#181b25] text-[#a3ff12] border border-[#2b3040]">
+                  #${activeQ.num} ${activeQ.dir === "across" ? t.acrossLabel : t.downLabel} (${activeQ.word.length})
+                </span>
+              </div>
+
+              <div class="p-2.5 rounded-xl bg-[#141720] border border-[#2b3040] text-xs sm:text-sm text-slate-200">
+                <strong class="text-[#ffe600]">#${activeQ.num}:</strong>
+                ${activeQ.uzQ}
+              </div>
+
+              <div class="cw-grid">
+                ${cellsHtml.join("")}
+              </div>
+            </div>
+
+            <div class="lg:col-span-6 brutal-box p-4 space-y-2.5 max-h-[680px] overflow-y-auto">
+              <div class="flex items-center justify-between sticky top-0 bg-[#11131a] pb-2 z-10 border-b border-[#232736]">
+                <h3 class="font-display text-sm sm:text-base font-black text-[#00e5ff]">
+                  ${t.questionsListTitle}
+                </h3>
+                <span class="font-mono-code text-xs text-slate-400">
+                  Katakni ajratish uchun bosing
+                </span>
+              </div>
+
+              ${QUIZ_ITEMS.map((item) => {
+                const isSolvedByMe = mySolvedSet.has(item.id);
+                const solversCount = ((state.wordSolvers || {})[item.id] || []).length;
+                const isUnlockedOnBoard = Boolean((state.unlockedWords || {})[item.id]);
+                const isSelected = item.id === activeWordId;
+
+                return `
+                  <div
+                    onclick="activeWordId = ${item.id}; render();"
+                    class="cursor-pointer p-3 rounded-xl border-2 transition-all ${
+                      isSolvedByMe
+                        ? "bg-[#a3ff12]/10 border-[#a3ff12]"
+                        : isSelected
+                        ? "bg-[#1c2030] border-[#ffe600]"
+                        : "bg-[#151822] border-[#262b3b] hover:border-slate-500"
+                    }"
+                  >
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-mono-code text-xs font-black text-[#ffe600]">
+                        #${item.num} · ${item.dir === "across" ? t.acrossLabel : t.downLabel} · ${item.word.length} HARF
+                      </span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-mono-code text-[10px] font-bold px-2 py-0.5 rounded ${
+                          isUnlockedOnBoard
+                            ? "bg-[#a3ff12] text-[#090a0e]"
+                            : "bg-[#222738] text-slate-300"
+                        }">
+                          ${Math.min(solversCount, UNLOCK_THRESHOLD)}${t.progressBadgeSuffix}
+                        </span>
+                        ${
+                          isSolvedByMe
+                            ? `<span class="font-mono-code text-[10px] font-black px-2 py-0.5 rounded bg-[#a3ff12] text-[#090a0e]">✓</span>`
+                            : ""
+                        }
+                      </div>
+                    </div>
+
+                    <div class="text-xs sm:text-sm font-bold text-white leading-snug">
+                      ${item.uzQ}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function focusCell(r, c) {
+      selectWordByCell(r, c);
+      setTimeout(() => {
+        const inputEl = document.getElementById(`cell-${r}-${c}`);
+        if (inputEl) inputEl.focus();
+      }, 0);
+    }
+
+    function selectWordByCell(r, c) {
+      const meta = CELL_META[`${r},${c}`];
+      if (!meta || !meta.entries.length) return;
+      const keepCurrent = meta.entries.find((e) => e.qId === activeWordId);
+      const nextId = keepCurrent ? keepCurrent.qId : meta.entries[0].qId;
+      if (nextId !== activeWordId) {
+        activeWordId = nextId;
+        render();
+      }
+    }
+
+    // --- 8. TOP 3 PODIUM BANNER ---
+    function renderTopThreePodium() {
+      const t = UZ_TEXT;
+      const finishers = Array.isArray(state.finishers) ? state.finishers.slice(0, 3) : [];
+      const medals = [
+        { place: 1, icon: "🥇", accent: "border-[#ffe600] text-[#ffe600]", badge: "bg-[#ffe600] text-[#090a0e]" },
+        { place: 2, icon: "🥈", accent: "border-[#00e5ff] text-[#00e5ff]", badge: "bg-[#00e5ff] text-[#090a0e]" },
+        { place: 3, icon: "🥉", accent: "border-[#ff3b5c] text-[#ff3b5c]", badge: "bg-[#ff3b5c] text-white" }
+      ];
+
+      return `
+        <div class="brutal-box-lime leader-glow p-4 sm:p-5 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="inline-flex items-center gap-2 font-mono-code text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded bg-[#a3ff12] text-[#090a0e]">
+              <span>🏆</span>
+              <span>${t.topLeaderLabel}</span>
+            </div>
+            <span class="font-mono-code text-xs text-slate-300">
+              ${finishers.length} / 3 YAKUNLAGAN
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            ${medals
+              .map((m) => {
+                const winner = finishers[m.place - 1];
+                return `
+                  <div class="bg-[#0c0e14] border-2 ${
+                    winner ? m.accent : "border-[#262b3b]"
+                  } rounded-xl p-3.5 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="font-mono-code text-[11px] font-black px-2 py-0.5 rounded ${m.badge}">
+                          ${m.icon} #${m.place}
+                        </span>
+                      </div>
+                      ${
+                        winner
+                          ? `<div class="font-display text-lg sm:text-2xl font-black text-white truncate">
+                              ${escapeHtml(winner.nick)}
+                            </div>`
+                          : `<div class="font-display text-sm sm:text-base font-bold text-slate-500">
+                              ${t.podiumSlotEmpty}
+                            </div>`
+                      }
+                    </div>
+                    ${
+                      winner
+                        ? `<span class="font-mono-code text-xs font-extrabold text-[#a3ff12] shrink-0">10/10</span>`
+                        : ""
+                    }
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+
+          ${
+            finishers.length === 0
+              ? `<div class="font-mono-code text-xs text-slate-400">
+                  ${t.noFinishersYet}
+                </div>`
+              : ""
+          }
+        </div>
+      `;
+    }
+
+    // --- 9. HOST VIEW & REGISTRATION LOBBY ---
+    function renderHostView() {
+      const t = UZ_TEXT;
+      const totalPlayers = Object.keys(state.players || {}).length;
+
+      return `
+        <div class="space-y-4">
+          ${renderTopThreePodium()}
+
+          <div class="brutal-box p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <span class="font-mono-code text-xs font-extrabold uppercase px-2.5 py-1 rounded bg-[#ffe600] text-[#090a0e]">
+                ${t.hostControls}
+              </span>
+              <span class="font-mono-code text-xs text-slate-300">
+                Ishtirokchilar: <strong class="text-[#a3ff12]">${totalPlayers}</strong>
+              </span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="copyShareLink()" class="brutal-btn bg-[#ffe600] text-[#090a0e] font-mono-code text-xs font-extrabold px-3 py-2 rounded-lg">
+                🔗 ${t.copyLinkBtn}
+              </button>
+              <button onclick="simulateThreePlayersProgress()" class="brutal-btn bg-[#00e5ff] text-[#090a0e] font-mono-code text-xs font-extrabold px-3 py-2 rounded-lg">
+                ${t.demoBotBtn}
+              </button>
+              <button onclick="resetSession()" class="brutal-btn bg-[#ff3b5c] text-white font-mono-code text-xs font-extrabold px-3 py-2 rounded-lg">
+                ${t.resetGameBtn}
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            <div class="lg:col-span-7">
+              ${renderHostCrosswordBoard()}
+            </div>
+
+            <div class="lg:col-span-5 brutal-box p-4 space-y-2.5 max-h-[680px] overflow-y-auto">
+              <h3 class="font-display text-sm sm:text-base font-black text-[#00e5ff] mb-2">
+                ${t.questionsListTitle} (3/3 HOLATI)
+              </h3>
+
+              ${QUIZ_ITEMS.map((item) => {
+                const solversList = (state.wordSolvers || {})[item.id] || [];
+                const count = Math.min(solversList.length, UNLOCK_THRESHOLD);
+                const isUnlocked = Boolean((state.unlockedWords || {})[item.id]);
+
+                return `
+                  <div class="p-3 rounded-xl border ${
+                    isUnlocked
+                      ? "bg-[#a3ff12]/10 border-[#a3ff12]"
+                      : "bg-[#151822] border-[#262b3b]"
+                  }">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                      <span class="font-mono-code text-xs font-black text-[#ffe600]">
+                        #${item.num} · ${isUnlocked ? item.word : "??? (" + item.word.length + ")"}
+                      </span>
+                      <span class="font-mono-code text-[11px] font-extrabold px-2 py-0.5 rounded ${
+                        isUnlocked
+                          ? "bg-[#a3ff12] text-[#090a0e]"
+                          : "bg-[#222738] text-slate-300"
+                      }">
+                        ${count}${t.progressBadgeSuffix}
+                      </span>
+                    </div>
+                    <div class="text-xs text-slate-200">
+                      ${item.uzQ}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLobbyView() {
+      const t = UZ_TEXT;
+      const registeredPlayers = Object.values(state.players || {});
+
+      return `
+        <div class="max-w-4xl mx-auto space-y-5">
+          ${renderTopThreePodium()}
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+            <div class="md:col-span-7 brutal-box-yellow p-6 flex flex-col justify-between space-y-5">
+              <div class="space-y-2">
+                <span class="font-mono-code text-xs font-extrabold uppercase px-2.5 py-1 rounded bg-[#ffe600] text-[#090a0e]">
+                  ${ROOM_CODE}
+                </span>
+                <h1 class="font-display text-2xl sm:text-3xl font-black text-white leading-tight">
+                  ${t.lobbyTitle}
+                </h1>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                  ${t.lobbyDesc}
+                </p>
+              </div>
+
+              <form
+                onsubmit="event.preventDefault(); registerNicknameAndEnterPlayer(document.getElementById('nickInput').value);"
+                class="space-y-3"
+              >
+                <label for="nickInput" class="block font-mono-code text-xs font-extrabold uppercase text-[#ffe600]">
+                  ${t.nickLabel}
+                </label>
+                <input
+                  id="nickInput"
+                  type="text"
+                  maxlength="18"
+                  required
+                  value="${escapeAttr(playerNick)}"
+                  oninput="playerNick = this.value; if (nickErrorMsg) { nickErrorMsg = ''; }"
+                  placeholder="${escapeAttr(t.nickPlaceholder)}"
+                  class="w-full px-4 py-3 rounded-xl bg-[#0b0d12] border-2 ${
+                    nickErrorMsg ? "border-[#ff3b5c]" : "border-[#353b50] focus:border-[#a3ff12]"
+                  } outline-none font-bold text-white text-base"
+                />
+                ${
+                  nickErrorMsg
+                    ? `<div class="font-mono-code text-xs font-extrabold text-[#ff3b5c] bg-[#ff3b5c]/15 border border-[#ff3b5c] rounded-lg px-3 py-2">
+                        ⚠ ${escapeHtml(nickErrorMsg)}
+                      </div>`
+                    : ""
+                }
+
+                <button
+                  type="submit"
+                  class="brutal-btn w-full bg-[#a3ff12] text-[#090a0e] font-display text-xs sm:text-sm font-black py-3.5 px-4 rounded-xl"
+                >
+                  📱 ${t.registerAndOpenBtn}
+                </button>
+              </form>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                <button
+                  onclick="uiRole = 'host'; render();"
+                  class="brutal-btn bg-[#ffe600] text-[#090a0e] font-display text-xs font-black py-2.5 px-3.5 rounded-xl"
+                >
+                  🖥️ ${t.openHostBtn}
+                </button>
+                <button
+                  onclick="copyShareLink()"
+                  class="brutal-btn bg-[#1d2130] text-[#00e5ff] font-mono-code text-xs font-bold py-2.5 px-3.5 rounded-xl"
+                >
+                  🔗 ${t.copyLinkBtn}
+                </button>
+              </div>
+            </div>
+
+            <div class="md:col-span-5 brutal-box p-5 flex flex-col justify-between space-y-4">
+              <div class="space-y-2.5">
+                <div class="font-mono-code text-xs font-extrabold uppercase text-[#a3ff12]">
+                  QOIDALAR VA RO'YXAT:
+                </div>
+                <ul class="text-xs sm:text-sm text-slate-300 space-y-2 list-disc pl-4">
+                  <li>Har bir ishtirokchi o'ziga takrorlanmas nikneym kiritib ro'yxatdan o'tadi.</li>
+                  <li>Barcha 10 ta o'zbekcha savol va katakchalar tayyor — o'zingiz yozasiz.</li>
+                  <li>3 ta ishtirokchi so'zni to'g'ri topsa, javob Asosiy ekranda ochiladi.</li>
+                  <li>Krossvordni birinchi bo'lib to'liq yakunlagan Top-3 shohsupaga chiqadi.</li>
+                </ul>
+              </div>
+
+              <div class="pt-2 border-t border-[#232736]">
+                <div class="font-mono-code text-[11px] text-slate-400 mb-1.5">
+                  BAND NIKLAR (${registeredPlayers.length}):
+                </div>
+                <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  ${
+                    registeredPlayers.length === 0
+                      ? `<span class="font-mono-code text-xs text-slate-500">Hali hech kim kirmadi</span>`
+                      : registeredPlayers
+                          .map(
+                            (p) =>
+                              `<span class="font-mono-code text-[11px] px-2 py-0.5 rounded bg-[#181b25] border border-[#2b3040] text-slate-200">${escapeHtml(
+                                p.nick
+                              )}</span>`
+                          )
+                          .join("")
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function copyShareLink() {
+      const shareUrl = window.location.href;
+      try {
+        const tempInput = document.createElement("input");
+        tempInput.value = shareUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        triggerToast(UZ_TEXT.copiedToast);
+      } catch (e) {
+        triggerToast(shareUrl);
+      }
+    }
+
+    // --- 10. MAIN RENDER ---
+    function render() {
+      const t = UZ_TEXT;
+      const root = document.getElementById("app");
+      if (!root) return;
+
+      let bodyContent = "";
+      if (uiRole === "host") {
+        bodyContent = renderHostView();
+      } else if (uiRole === "player") {
+        bodyContent = renderPlayerCrosswordAndQuestions();
+      } else if (uiRole === "split") {
+        bodyContent = `
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <div class="xl:col-span-7">
+              <div class="font-mono-code text-xs font-extrabold uppercase text-[#ffe600] mb-2">
+                🖥️ ASOSIY EKRAN (DOSKA)
+              </div>
+              ${renderHostView()}
+            </div>
+            <div class="xl:col-span-5">
+              <div class="font-mono-code text-xs font-extrabold uppercase text-[#a3ff12] mb-2">
+                📱 ISHTIROKCHI TELEFONI
+              </div>
+              ${renderPlayerCrosswordAndQuestions()}
+            </div>
+          </div>
+        `;
+      } else {
+        bodyContent = renderLobbyView();
+      }
+
+      root.innerHTML = `
+        <header class="border-b-2 border-[#232736] bg-[#0c0e14]/95 sticky top-0 z-30">
+          <div class="max-w-[1440px] mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <button onclick="uiRole = 'lobby'; render();" class="flex items-center gap-2 text-left">
+                <span class="w-9 h-9 rounded-xl bg-[#ffe600] text-[#090a0e] font-display font-black text-lg flex items-center justify-center border-2 border-[#090a0e] shadow-[2px_2px_0px_#a3ff12]">
+                  D
+                </span>
+                <div>
+                  <div class="font-display text-sm sm:text-base font-black text-white leading-none">
+                    DIOGENES <span class="text-[#a3ff12]">CROSSWORD</span>
+                  </div>
+                  <div class="font-mono-code text-[10px] text-slate-400 mt-0.5 hidden sm:block">
+                    ${t.brandSub}
+                  </div>
+                </div>
+              </button>
+
+              <span class="hidden md:inline-flex font-mono-code text-[10px] px-2 py-0.5 rounded bg-[#171a24] border border-[#2b3040] text-[#a3ff12]">
+                ${cloudEnabled ? t.syncCloud : t.syncLocal}
+              </span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <div class="inline-flex rounded-xl bg-[#141721] p-1 border border-[#2b3040]">
+                <button
+                  onclick="uiRole = 'lobby'; render();"
+                  class="px-2.5 py-1 rounded-lg font-mono-code text-xs font-bold ${
+                    uiRole === "lobby" ? "bg-[#ffe600] text-[#090a0e]" : "text-slate-300 hover:text-white"
+                  }"
+                >
+                  Kirish
+                </button>
+                <button
+                  onclick="uiRole = 'host'; render();"
+                  class="px-2.5 py-1 rounded-lg font-mono-code text-xs font-bold ${
+                    uiRole === "host" ? "bg-[#ffe600] text-[#090a0e]" : "text-slate-300 hover:text-white"
+                  }"
+                >
+                  Doska
+                </button>
+                <button
+                  onclick="if (playerNick) { uiRole = 'player'; render(); } else { uiRole = 'lobby'; nickErrorMsg = UZ_TEXT.nickEmptyError; render(); }"
+                  class="px-2.5 py-1 rounded-lg font-mono-code text-xs font-bold ${
+                    uiRole === "player" ? "bg-[#a3ff12] text-[#090a0e]" : "text-slate-300 hover:text-white"
+                  }"
+                >
+                  Telefon
+                </button>
+                <button
+                  onclick="if (playerNick) { uiRole = 'split'; render(); } else { uiRole = 'lobby'; nickErrorMsg = UZ_TEXT.nickEmptyError; render(); }"
+                  class="hidden sm:inline-block px-2.5 py-1 rounded-lg font-mono-code text-xs font-bold ${
+                    uiRole === "split" ? "bg-[#00e5ff] text-[#090a0e]" : "text-slate-300 hover:text-white"
+                  }"
+                >
+                  2-ta
+                </button>
+              </div>
+
+              <button
+                onclick="copyShareLink()"
+                class="brutal-btn bg-[#ffe600] text-[#090a0e] font-mono-code text-xs font-black px-2.5 py-1.5 rounded-xl"
+              >
+                HAVOLA
+              </button>
+            </div>
+          </div>
+        </header>
+
+        ${
+          toastMessage
+            ? `
+              <div class="fixed bottom-4 right-4 z-40 animate-pop-in brutal-box-lime px-4 py-3 font-display text-xs sm:text-sm font-black text-[#090a0e] bg-[#a3ff12]">
+                ⚡ ${escapeHtml(toastMessage)}
+              </div>
+            `
+            : ""
+        }
+
+        <main class="flex-1 max-w-[1440px] w-full mx-auto px-3 sm:px-6 py-5">
+          ${bodyContent}
+        </main>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function escapeAttr(str) {
+      return escapeHtml(str);
+    }
+
+    (function initFromQuery() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const qRole = params.get("role");
+        if (qRole === "host" || qRole === "split") {
+          uiRole = qRole;
+        } else if (qRole === "player" && playerNick) {
+          uiRole = "player";
+        }
+      } catch (e) {}
+      render();
+    })();
+  </script>
+</body>
+</html>
